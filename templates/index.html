@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendScraper - Twitter Trends Tracker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        .gradient-text {
+            background: linear-gradient(45deg, #1DA1F2, #4c1d95);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .trend-card {
+            transition: all 0.3s ease;
+        }
+        .trend-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .glass-effect {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
+    <!-- Hero Section -->
+    <div class="fixed w-full h-full opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')"></div>
+
+    <div class="relative">
+        <!-- Header Section -->
+        <header class="container mx-auto px-4 py-8">
+            <div class="flex items-center justify-center mb-12">
+                <svg class="w-16 h-16 mr-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23 3.01s-2.018 1.192-3.14 1.53a4.48 4.48 0 00-7.86 3v1a10.66 10.66 0 01-9-4.53s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5 0-.278-.028-.556-.08-.83C21.94 5.674 23 3.01 23 3.01z" stroke="#1DA1F2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="text-5xl font-bold gradient-text">Stir</h1>
+            </div>
+            <div class="text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold mb-4">Twitter Trends Analyzer</h2>
+                <p class="text-gray-400 text-lg">
+                    Stay ahead of the curve with real-time Twitter trends tracking and analysis.
+                    Discover what's happening around the world instantly.
+                </p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 pb-12">
+            <!-- Action Button -->
+            <div class="text-center mb-12">
+                <button onclick="fetchTrends()" id="fetchButton" 
+                        class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
+                               px-8 py-3 rounded-lg text-lg font-semibold shadow-lg transform transition
+                               hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Fetch Latest Trends
+                    </span>
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden">
+                <div class="flex justify-center items-center space-x-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span class="text-gray-400">Fetching trends...</span>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="error" class="hidden text-red-500 text-center mb-4 p-4 glass-effect rounded-lg"></div>
+
+            <!-- Results Section -->
+            <div id="results" class="hidden space-y-8">
+                <div class="text-gray-400 text-center">
+                    Last updated: <span id="datetime" class="font-semibold"></span>
+                </div>
+
+                <!-- Trends Grid -->
+                <div id="trendsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+                <!-- Footer Info -->
+                <div class="glass-effect rounded-lg p-6 space-y-4">
+                    <div class="text-gray-400 text-center">
+                        IP Address: <span id="ipAddress" class="font-mono"></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <pre id="mongodbRecord" class="text-sm bg-gray-800 p-4 rounded-lg"></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    function fetchTrends() {
+        const button = document.getElementById('fetchButton');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+        
+        button.disabled = true;
+        loading.classList.remove('hidden');
+        results.classList.add('hidden');
+        error.classList.add('hidden');
+        
+        fetch('/scrape')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update timestamp and IP
+                    document.getElementById('datetime').textContent = data.data.datetime;
+                    document.getElementById('ipAddress').textContent = data.data.ip_address;
+                    
+                    // Update trends
+                    const trendsContainer = document.getElementById('trendsContainer');
+                    trendsContainer.innerHTML = '';
+                    
+                    data.data.trends.forEach((trend, index) => {
+                        trendsContainer.innerHTML += `
+                            <div class="trend-card glass-effect rounded-lg p-6 animate__animated animate__fadeIn">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-sm font-semibold text-blue-400">#${index + 1}</span>
+                                    <span class="text-xs px-2 py-1 bg-blue-500 bg-opacity-20 rounded-full">${trend.category}</span>
+                                </div>
+                                <h3 class="text-xl font-bold mb-2">${trend.name}</h3>
+                                ${trend.posts ? `<p class="text-gray-400 text-sm">${trend.posts}</p>` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    // Update MongoDB record
+                    document.getElementById('mongodbRecord').textContent = 
+                        JSON.stringify(JSON.parse(data.data.mongodb_record), null, 2);
+                    
+                    results.classList.remove('hidden');
+                } else {
+                    throw new Error(data.error);
+                }
+            })
+            .catch(err => {
+                error.textContent = err.message;
+                error.classList.remove('hidden');
+            })
+            .finally(() => {
+                button.disabled = false;
+                loading.classList.add('hidden');
+            });
+    }
+    </script>
+</body>
+</html>
